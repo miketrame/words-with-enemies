@@ -4,6 +4,9 @@ from https://en.wikipedia.org/wiki/Scrabble_letter_distributions.
 """
 import player
 import random
+import enchant
+
+DICT = enchant.Dict("en_US")
 
 LETTER_POINTS = {"A":1, "B":3, "C":3, "D":2, "E":1, "F":4, "G":2, "H":4,
                  "I":1, "J":8, "K":5, "L":1, "M":3, "N":1, "O":1, "P":3,
@@ -57,6 +60,7 @@ class Game:
         random.shuffle(self.letters)
 
         self.current_player = self.player1
+        self.first_move = True
         self.over = False
 
     def setup(self):
@@ -72,6 +76,8 @@ class Game:
 
     def print_board(self):
         """Print board in a readable fashion."""
+        print("%s: %i" % (self.player1.name, self.player1.score))
+        print("%s: %i" % (self.player2.name, self.player2.score))
         print("  ", end='')
         for i in range(15):
             letter = "A"
@@ -93,6 +99,64 @@ class Game:
         """Prompt the appropriate player for their move."""
         print("Your turn, ", self.current_player.name)
         print(' '.join(self.current_player.letters))
+
+    def play(self, word, pos, orientation):
+            """
+            Play a word onto the board. 
+            Returns True if successful, False otherwise.
+            """
+            if not DICT.check(word):
+                print("Invalid move. Word does not exist.")
+                return False
+
+            r = int(pos[0:-1]) - 1
+            c = ord(pos[-1]) - 65
+            letters_played = []
+
+            if self.first_move:
+                if orientation[0] == "h":
+                    if r != 7 or c + len(word) < 7 or c > 7:
+                        print("First move must have a letter on 8H")
+                        return False
+                else:
+                    if c != 7 or r + len(word) < 7 or r > 7:
+                        print("First move must have a letter on 8H")
+                        return False
+            self.first_move = False
+
+            for i in range(len(word)):
+                if orientation[0] == "h":
+                    if self.board[r][c + i] not in (" ", word[i]):
+                        print("Invalid move.")
+                        return False
+                    if self.board[r][c + i] == " ":
+                        if word[i] not in self.current_player.letters:
+                            print("Invalid move. You do not have that letter.")
+                            return False
+                        letters_played.append(word[i])
+                        self.board[r][c + i] = word[i]
+                else:
+                    if self.board[r + i][c] == " ":
+                        if word[i] not in self.current_player.letters:
+                            print("Invalid move. You do not have that letter.")
+                            return False
+                        letters_played.append(word[i])
+                        self.board[r + i][c] = word[i]            
+
+            for letter in letters_played:
+                self.current_player.letters.remove(letter)
+                self.current_player.score += LETTER_POINTS[letter]
+
+            if len(letters_played) > len(self.letters):
+                self.current_player.letters += self.letters
+                self.letters.clear()
+            else:
+                self.current_player.letters += [self.letters.pop() for i in range(len(letters_played))]
+
+            if not self.player1.letters and not self.player2.letters:
+                self.over = True
+
+            return True
 
     def change_turn(self):
         if self.current_player == self.player1:

@@ -11,7 +11,7 @@ def main():
     current_game = game.Game()
     current_game.setup()
 
-    while (not current_game.over):
+    while not current_game.over:
         current_game.print_board()
         current_game.prompt_player()
         user_input = input(">")
@@ -24,25 +24,44 @@ def main():
             print("             Row first, then column. For example 3B")
             print("orientation  The orientation you'd like your word to be in.")
             print("             vertical (or v) or horizontal (or h)")
+            print()
+            print("To pass, enter:")
+            print("pass")
+        if command == "pass":
+            current_game.change_turn()
         if command in ("play", "p"):
             if len(user_input.split()) != 4:
                 print("Missing arguments in play command. See \"help\" or try again.")
-            word = user_input.split()[1]
-            pos = user_input.split()[2]
+                break
+            word = user_input.split()[1].upper()
+            pos = user_input.split()[2].upper()
             orientation = user_input.split()[3]
 
-            if len(pos) != 2:
+            if len(pos) < 2 or len(pos) > 3:
                 print("Invalid position. Try again.")
 
-            print(pos)
-            if ord(pos[0]) not in range(ord("A"), ord("O")):
+            if not pos[0:-1].isdigit():
                 print("Invalid position. Try again.")
-            if int(pos[1]) < 1 or int(pos[1]) > 15:
+            if int(pos[0:-1]) < 1 or int(pos[0:-1]) > 15:
+                print("Invalid position. Try again.")
+            if ord(pos[-1]) not in range(ord("A"), ord("O")):
                 print("Invalid position. Try again.")
 
             if orientation not in ("vertical", "v", "horizontal", "h"):
                 print("Invalid orientation. Try again.")
-            current_game.current_player.play(word, pos, orientation, current_game)
+
+            if current_game.play(word, pos, orientation):
+                current_game.change_turn()
+
+    if current_game.player1.score > current_game.player2.score:
+        winner = current_game.player1.name
+    elif current_game.player2.score > current_game.player1.score:
+        winner = current_game.player2.name
+    else:
+        print("It's a tie!! How the hell did that happen?")
+        return
+
+    print("{} wins!".format(winner))
 
 
 if __name__ == "__main__":
